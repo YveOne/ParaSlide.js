@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>ParaSlide Test</title>
+        <meta name="author" content="Yvonne P.">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <script data-main="scripts/main" src="scripts/require.js"></script>
+        <style type="text/css">
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #19226d;
+}
+
+
+
+#clouds {
+    position: absolute;
+    height: 100vh;
+    background: url(clouds.png);
+    background-size: contain;
+    z-index: 1;
+    width: calc(100vh / 900 * 1538 + 100vw);
+}
+#windows {
+    overflow: hidden;
+    position: absolute;
+    z-index: 2;
+    height: 100vh;
+    width: 300vw;
+}
+#windows > div {
+    float: left;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+#windows > div > div {
+    position: absolute;
+    z-index: 2;
+    top: 0.8em;
+    left: 0.8em;
+    right: 0.8em;
+    bottom: 0.8em;
+    border: 0.05em solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0.4em;
+}
+
+#leftBtn1, #leftBtn2 { float: left; }
+#rightBtn1, #rightBtn2 { float: right; }
+#shakeBtn { display: block; margin: 0 auto; }
+
+        </style>
+    </head>
+    <body>
+
+    <div id="windows" style="transform: translate3d(0, 0, 0);">
+        <div id="window-left">
+            <div>
+                <button id="rightBtn2">Right</button>
+            
+            </div>
+        </div>
+        <div id="window-center">
+            <div>
+                <button id="leftBtn1">Left</button>
+                <button id="rightBtn1">Right</button>
+                <button id="shakeBtn">shake</button>
+            </div>
+        </div>
+        <div id="window-right">
+            <div>
+                <button id="leftBtn2">Left</button>
+            
+            </div>
+        </div>
+    </div>
+    <div id="clouds" style="transform: translate3d(0, 0, 0);"></div>
+
+
+
+
+
+    </body>
+</html>

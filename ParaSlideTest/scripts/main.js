@@ -13,9 +13,8 @@ requirejs([
     **/
 
     let cloudSlide = new ParaSlide(document.getElementById("clouds"), {
-        "initialX": 0,
-        "slideWidth": rw,
-        "fps": 70
+        "x": 0,
+        "width": rw
     });
 
     let cloudSlowHandler = cloudSlide.addLinearHandler(rw / 90000);
@@ -37,12 +36,11 @@ requirejs([
     **/
 
     let windowSlide = new ParaSlide(document.getElementById("windows"), {
-        "initialX": -vw,
-        "slideWidth": 0,
-        "fps": 70,
+        "x": -vw,
+        "width": 0
     });
 
-    let windowSlideHandler = windowSlide.addTimedOffsetHandler(500, vw, () => {
+    let windowSlideHandler = windowSlide.addTimedOffsetHandler(vw, 500, () => {
         windowSlideHandler.enabled = false;
         //cloudSlowHandler.enabled = true;
         cloudFastHandler.enabled = false;

@@ -1,5 +1,5 @@
 /*
- *  ParaSlide.js v1.0.0
+ *  ParaSlide.js v1.1.0
  *  https://github.com/YveOne/ParaSlide.js
  *  https://yveone.com/ParaSlide.js
 **/
@@ -30,111 +30,142 @@
 
 })("ParaSlide", [], () => {
 
-    return class ParaSlide {
+    function ParaSlide(el, cfg) {
+            let that = this;
 
-        constructor(el, cfg) {
-
+            el = document.querySelector(el);
+            if (!el) {
+                // ERROR
+                return;
+            }
             let elStyle = el.style;
-            let handlers = [];
 
-            let renderTime = 1000 / (cfg.fps || 100);
-            let slideWidth = cfg.slideWidth || 0;
-            let slideHeight = cfg.slideHeight || 0;
-            let x = cfg.initialX || 0;
-            let y = cfg.initialY || 0;
-            elStyle.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+            let handlers = [];
+            let handlerFuncs = [];
+
+            this.frametime = cfg.frametime || 10;
+            this.width = cfg.width || 0;
+            this.height = cfg.height || 0;
+            this.x = cfg.x || 0;
+            this.y = cfg.y || 0;
 
             let progressStart = 0;
             let progressDone = 0;
             let progressAll = 0;
             let progressLast = 0;
 
-            let sumHandler = (sum, func, i) => {
-                let add = func(progressDone, progressAll);
+            let updateObject = function() {
+                //elStyle.transform = 'translate3d(' + that.x + 'px, ' + that.y + 'px, 0)';
+                elStyle.transform = `translate3d(${that.x}px, ${that.y}px, 0)`;
+            };
+
+            let sumHandler = function(sum, func, i) {
+                let add = func();
                 return [
                     sum[0] + add[0],
                     sum[1] + add[1]
                 ];
             };
 
-            let step = (timestamp) => {
+            let animateStep = (timestamp) => {
                 if (!progressStart) progressStart = timestamp;
                 progressAll = timestamp - progressStart;
                 progressDone = progressAll - progressLast;
-                if (progressDone >= renderTime) {
+                let progressOver = progressDone - that.frametime;
+                if (progressOver >= 0) {
                     let add = handlers.reduce(sumHandler, [0,0]);
-                    //if (add) {
-                        x += add[0];
-                        y += add[1];
-                        if (slideWidth) x = (x - slideWidth) % slideWidth;
-                        if (slideHeight) y = (y - slideHeight) % slideHeight;
-                        elStyle.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
-                    //}
+                    that.x += add[0];
+                    that.y += add[1];
+                    if (that.width)     that.x = (that.x - that.width) % that.width;
+                    if (that.height)    that.y = (that.y - that.height) % that.height;
+                    updateObject();
                     progressLast = progressAll;
                 }
-                window.requestAnimationFrame(step);
+                window.requestAnimationFrame(animateStep);
             };
 
-            this.addHandler = (func) => {
+            this.addHandler = function(userFunc) {
+                userFunc = userFunc.bind(that);
                 let ret = {
+                    "index": handlerFuncs.length,
                     "enabled": true,
                     "factorX": 1,
                     "factorY": 0
                 };
-                handlers.push((...args) => {
-                    let add = ret.enabled ? func.apply(null, args) : 0;
+                let callFunc = function(...args) {
+                    let add = ret.enabled ? userFunc(progressDone, progressAll) : 0;
                     return [
                         add * ret.factorX,
                         add * ret.factorY
                     ];
-                    //return ret.enabled ? func.apply(null, args) * ret.factor : 0;
-                });
+                };
+                handlerFuncs.push(callFunc);
+                handlers.push(callFunc);
                 return ret;
             };
 
-            this.addSinusHandler = (duration, steps, callback) => {
-                let timeDone = 0;
-                let lastValue = 0;
-                return this.addHandler((done, all) => {
-                    timeDone += done;
-                    let doSin = timeDone / (duration/steps);
-                    if (timeDone < duration) {
-                        doSin = Math.sin( doSin ) - lastValue;
-                        lastValue += doSin;
-                    } else {
-                        timeDone = 0;
-                        doSin = -lastValue;
-                        lastValue = 0;
-                        if (callback) setTimeout(callback, 1);
+            this.removeHandler = function(res) {
+                if (res.index !== undefined) {
+                    let func = handlerFuncs[res.index];
+                    if (func) {
+                        let i = handlers.indexOf(func);
+                        if (i !== -1) {
+                            handlers.splice(i, 1);
+                            handlerFuncs[res.index] = null;
+                        }
                     }
-                    return doSin;
-                });
+                }
             };
 
-            this.addLinearHandler = (timeFactor) => {
-                return this.addHandler((done, all) => {
-                    return timeFactor * done;
-                });
-            };
+            updateObject();
+            window.requestAnimationFrame(animateStep);
+    }
 
-            this.addTimedOffsetHandler = (time, offset, callback) => {
-                let timeFactor = offset / time;
-                let timeDone = 0;
-                return this.addHandler((done, all) => {
-                    timeDone += done;
-                    if (timeDone >= time) {
-                        done = time - (timeDone - done); // do the rest pixels
-                        timeDone = 0;
-                        if (callback) setTimeout(callback, 1);
-                    }
-                    return timeFactor * done;
-                });
-            };
-
-            window.requestAnimationFrame(step);
-        }
-
+    ParaSlide.prototype.addSinusHandler = function(duration, steps, callback) {
+        let doneTime = 0;
+        let doneValue = 0;
+        let stepFactor = duration / steps;
+        let sin = Math.sin;
+        return this.addHandler(function(done, all) {
+            doneTime += done;
+            let addValue = doneTime / stepFactor;
+            if (doneTime < duration) {
+                addValue = sin(addValue) - doneValue;
+                doneValue += addValue;
+            } else {
+                doneTime = 0;
+                addValue = -doneValue;
+                doneValue = 0;
+                if (callback) setTimeout(function() {
+                    callback.call(this);
+                }.bind(this), 1);
+            }
+            return addValue;
+        });
     };
 
+    ParaSlide.prototype.addLinearHandler = function(timeFactor) {
+        return this.addHandler(function(done, all) {
+            return timeFactor * done;
+        });
+    };
+
+    ParaSlide.prototype.addTimedHandler = function(value, time, callback) {
+        let timeFactor = value / time;
+        let timeDone = 0;
+        return this.addHandler(function(done, all) {
+            timeDone += done;
+            if (timeDone >= time) {
+                done = time - (timeDone - done); // do the rest pixels
+                timeDone = 0;
+                if (callback) setTimeout(function() {
+                    callback.call(this);
+                }.bind(this), 1);
+            }
+            return timeFactor * done;
+        });
+    };
+
+    return ParaSlide;
 });
 
